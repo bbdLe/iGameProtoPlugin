@@ -1,0 +1,32 @@
+syntax = "proto3";
+package proto;
+
+enum CsMsgId
+{
+    CS_CMD_START = 0;
+    CS_CMD_LOGIN_REQ = 1; // message:LoginReq|handler:1
+    CS_CMD_LOGIN_RES = 2; // message:LoginRes
+    CS_CMD_CHAT_REQ = 3; // message:ChatReq|handler:1
+    CS_CMD_CHAT_RES = 4; // message:ChatRes
+}
+
+message LoginReq {
+    string version = 1;
+    string platform = 2;
+    string uid = 3;
+}
+
+message LoginRes {
+    int32 result = 1;
+    string token = 2;
+    int32 server_id = 3;
+}
+
+message ChatReq {
+    string msg = 1;
+}
+
+message ChatRes {
+    string msg = 1;
+    int64 session_id = 2;
+}
