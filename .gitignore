@@ -1,0 +1,3 @@
+*.exe
+protoc-gen-go-game
+.idea
