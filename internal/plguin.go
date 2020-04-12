@@ -44,7 +44,6 @@ func (p *gameproto) GenerateImports(file *generator.FileDescriptor) {
 
 	p.P("\"github.com/bbdLe/iGame/comm\"")
 	p.P("\"github.com/bbdLe/iGame/comm/codec\"")
-	p.P("\"github.com/bbdLe/iGame/comm/util\"")
 	p.P("_ \"github.com/bbdLe/iGame/comm/codec/gogopb\"")
 	p.P("\"reflect\"")
 }
