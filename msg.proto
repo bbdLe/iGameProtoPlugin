@@ -1,31 +1,35 @@
 syntax = "proto3";
 package proto;
 
-enum CsMsgId
+enum ProtoID
 {
     CS_CMD_START = 0;
-    CS_CMD_LOGIN_REQ = 1; // message:LoginReq|handler:1
-    CS_CMD_LOGIN_RES = 2; // message:LoginRes
-    CS_CMD_CHAT_REQ = 3; // message:ChatReq|handler:1
-    CS_CMD_CHAT_RES = 4; // message:ChatRes
+    CS_CMD_LOGIN_REQ = 1;
+    CS_CMD_LOGIN_RES = 2;
+    CS_CMD_CHAT_REQ = 3;
+    CS_CMD_CHAT_RES = 4;
 }
 
+//[id:CS_CMD_LOGIN_REQ]
 message LoginReq {
     string version = 1;
     string platform = 2;
     string uid = 3;
 }
 
+// [id:CS_CMD_LOGIN_RES]
 message LoginRes {
     int32 result = 1;
     string token = 2;
     int32 server_id = 3;
 }
 
+// [id:CS_CMD_CHAT_REQ]
 message ChatReq {
     string msg = 1;
 }
 
+// [id:CS_CMD_CHAT_RES]
 message ChatRes {
     string msg = 1;
     int64 session_id = 2;

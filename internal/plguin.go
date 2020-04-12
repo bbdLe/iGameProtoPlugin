@@ -15,16 +15,21 @@ import (
 const (
 	tmpl = `
 	comm.RegMessageMeta(&comm.MessageMeta{
-		MsgId: int(util.StringHash("proto.{{.MsgType}}")),
-		Type: reflect.TypeOf((*{{.MsgType}})(nil)).Elem(),
+		MsgId: int({{.Id}}),
+		Type: reflect.TypeOf((*{{.Type}})(nil)).Elem(),
 		Codec: codec.MustGetCodec("gogopb"),
 	})
 `
 )
 
 type MsgEntry struct {
-	MsgType string
+	Type string
+	Id string
 }
+
+var (
+	pathMap = make(map[string]*descriptor.SourceCodeInfo_Location)
+)
 
 type gameproto struct{ *generator.Generator }
 
@@ -46,7 +51,6 @@ func (p *gameproto) GenerateImports(file *generator.FileDescriptor) {
 
 func (p *gameproto) Generate(file *generator.FileDescriptor) {
 	// comment map
-	pathMap := make(map[string]*descriptor.SourceCodeInfo_Location)
 	for _, loc := range file.GetSourceCodeInfo().GetLocation() {
 		key := ""
 
@@ -57,63 +61,43 @@ func (p *gameproto) Generate(file *generator.FileDescriptor) {
 		pathMap[key] = loc
 	}
 
-	// message map
-	msgMap := make(map[string]*descriptor.DescriptorProto)
-	for _, msg := range file.GetMessageType() {
-		msgMap[msg.GetName()] = msg
-	}
-
-	// CS宏解析出信息
-	for i, enumEntry := range file.GetEnumType() {
-		if *enumEntry.Name != "CsMsgId" {
-			continue
-		}
-
-		for j, v := range enumEntry.GetValue() {
-			key := fmt.Sprintf("|5|%d|2|%d", i, j)
-			local, ok := pathMap[key]
-			if !ok {
-				continue
-			}
-
-			comment := local.GetTrailingComments()
-			comment = strings.TrimLeft(comment, "\r\n ")
-			comment = strings.TrimRight(comment, "\r\n ")
-			if len(comment) == 0 {
-				continue
-			}
-
-			kvMap := util.Comment2Map(comment)
-			if len(kvMap) == 0 {
-				continue
-			}
-
-			// 获取msg
-			msgName, ok := kvMap["message"]
-			if !ok {
-				log.Printf("msg is empty, macro is %s, kvMap is %v", v.GetName(), kvMap)
-				continue
-			}
-
-			msgMeta, ok := msgMap[msgName]
-			if !ok {
-				log.Println("can't find msg : ", msgName)
-			}
-
-			log.Printf("macro is %s, msg meta is : %v", msgName, msgMeta.GetName())
-		}
-	}
-
 	p.P("func init() {\n")
-	for _, msg := range file.MessageType {
-		p.genMessageCode(msg)
+	for i, msg := range file.MessageType {
+		p.genMessageCode(i, msg)
 	}
 	p.P("\n}")
 }
 
-func (p *gameproto) genMessageCode(msg *descriptor.DescriptorProto) {
+func (p *gameproto) genMessageCode(index int, msg *descriptor.DescriptorProto) {
+	key := fmt.Sprintf("|4|%d", index)
+
+	comment := ""
+	if v, ok := pathMap[key]; ok {
+		comment = v.GetLeadingComments()
+		comment = strings.TrimSpace(comment)
+		comment = strings.TrimSpace(comment)
+	}
+
+	if len(comment) == 0 {
+		return
+	}
+	comment = strings.TrimPrefix(comment, "[")
+	comment = strings.TrimSuffix(comment, "]")
+	m := util.Comment2Map(comment)
+	if len(m) == 0  {
+		log.Printf("msg(%s) without id", msg.GetName())
+		return
+	}
+	id, ok := m["id"]
+	if !ok {
+		log.Printf("msg(%s) without id", msg.GetName())
+		return
+	}
+	id = fmt.Sprintf("ProtoID_%s", id)
+
 	msgEntry := MsgEntry{
-		MsgType: *msg.Name,
+		Type: msg.GetName(),
+		Id: id,
 	}
 
 	var buf bytes.Buffer
